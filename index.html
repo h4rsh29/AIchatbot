@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco-Chatbot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chat-bubble {
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .user-bubble {
+            background-color: #34D399; /* A nice green for the user */
+            color: white;
+        }
+        .bot-bubble {
+            background-color: #F3F4F6; /* Light gray for the bot */
+            color: #1F2937;
+        }
+        .predefined-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .predefined-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        #chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        #chat-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        #chat-container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+        #chat-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-2xl flex flex-col h-[90vh]">
+        <!-- Header -->
+        <div class="bg-emerald-500 text-white p-4 rounded-t-2xl flex items-center shadow-md">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-3" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            </svg>
+            <h1 class="text-xl font-bold">Eco-Chatbot</h1>
+        </div>
+
+        <!-- Chat Container -->
+        <div id="chat-container" class="flex-1 p-6 overflow-y-auto">
+            <!-- Initial Bot Message -->
+            <div class="flex justify-start mb-4">
+                <div class="bot-bubble rounded-lg p-3 shadow">
+                    <p class="text-sm">Hello! I'm your Eco-Chatbot. I can help you with sustainable purchasing decisions, waste reduction, and recycling. How can I assist you today?</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Predefined Questions -->
+        <div id="predefined-questions" class="p-4 border-t border-gray-200">
+            <p class="text-sm font-semibold text-gray-600 mb-2 text-center">Or choose a topic:</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <button class="predefined-btn bg-emerald-100 text-emerald-800 p-2 rounded-lg text-sm font-medium text-center" onclick="handlePredefinedQuestion('Tell me about eco-friendly products')">🌱 Eco-friendly Products</button>
+                <button class="predefined-btn bg-emerald-100 text-emerald-800 p-2 rounded-lg text-sm font-medium text-center" onclick="handlePredefinedQuestion('How can I reduce waste?')">🗑️ Waste Reduction Tips</button>
+                <button class="predefined-btn bg-emerald-100 text-emerald-800 p-2 rounded-lg text-sm font-medium text-center" onclick="handlePredefinedQuestion('Guide me on recycling')">♻️ Recycling Guide</button>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 bg-white border-t border-gray-200 rounded-b-2xl">
+            <div class="flex items-center">
+                <input type="text" id="user-input" class="flex-1 border border-gray-300 rounded-full py-2 px-4 focus:outline-none focus:ring-2 focus:ring-emerald-400" placeholder="Type your message...">
+                <button id="send-btn" class="ml-3 bg-emerald-500 text-white rounded-full p-3 hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+             <p class="text-xs text-gray-400 mt-2 text-center">This chatbot uses AI. Information may not be 100% accurate.</p>
+        </div>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const predefinedQuestionsContainer = document.getElementById('predefined-questions');
+
+        // --- Event Listeners ---
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // --- Main Functions ---
+        function sendMessage() {
+            const message = userInput.value.trim();
+            if (message === '') return;
+
+            appendMessage(message, 'user');
+            userInput.value = '';
+            predefinedQuestionsContainer.style.display = 'none'; // Hide predefined questions after first message
+            getBotResponse(message);
+        }
+
+        function handlePredefinedQuestion(question) {
+            appendMessage(question, 'user');
+            predefinedQuestionsContainer.style.display = 'none'; // Hide predefined questions
+            getBotResponse(question);
+        }
+
+        async function getBotResponse(userMessage) {
+            appendMessage('...', 'bot', true); // Show typing indicator
+
+            let chatHistory = [{
+                role: "user",
+                parts: [{ text: "You are an expert on sustainability. Your name is Eco-Chatbot." }]
+            }, {
+                role: "model",
+                parts: [{ text: "Okay, I am Eco-Chatbot, an expert on sustainability. How can I help you today?" }]
+            }];
+            chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+
+            const payload = { contents: chatHistory };
+            const apiKey = ""; // API Key is handled by the environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                let botResponse = "Sorry, I couldn't process that. Please try again.";
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    botResponse = result.candidates[0].content.parts[0].text;
+                }
+                 updateLastBotMessage(botResponse);
+            } catch (error) {
+                console.error("Error fetching bot response:", error);
+                updateLastBotMessage("Oops! Something went wrong. Please check your connection and try again.");
+            }
+        }
+
+        // --- Helper Functions ---
+        function appendMessage(message, sender, isTyping = false) {
+            const bubble = document.createElement('div');
+            bubble.classList.add('flex', `justify-${sender === 'user' ? 'end' : 'start'}`, 'mb-4');
+
+            const messageContent = document.createElement('div');
+            messageContent.classList.add('chat-bubble', `${sender}-bubble`, 'rounded-lg', 'p-3', 'shadow');
+            
+            if (isTyping) {
+                messageContent.id = 'typing-indicator';
+                messageContent.innerHTML = `<div class="flex items-center justify-center">
+                    <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce mr-1"></div>
+                    <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce mr-1" style="animation-delay: 0.1s;"></div>
+                    <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
+                </div>`;
+            } else {
+                // Basic markdown to HTML conversion
+                let formattedMessage = message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Bold
+                formattedMessage = formattedMessage.replace(/\*(.*?)\*/g, '<em>$1</em>');     // Italics
+                formattedMessage = formattedMessage.replace(/(\r\n|\n|\r)/gm, '<br>'); // New lines
+                messageContent.innerHTML = `<p class="text-sm">${formattedMessage}</p>`;
+            }
+
+            bubble.appendChild(messageContent);
+            chatContainer.appendChild(bubble);
+            chatContainer.scrollTop = chatContainer.scrollHeight; // Auto-scroll to bottom
+        }
+
+        function updateLastBotMessage(newMessage) {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                // Basic markdown to HTML conversion for the final message
+                let formattedMessage = newMessage.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                formattedMessage = formattedMessage.replace(/\*(.*?)\*/g, '<em>$1</em>');
+                formattedMessage = formattedMessage.replace(/(\r\n|\n|\r)/gm, '<br>');
+                typingIndicator.innerHTML = `<p class="text-sm">${formattedMessage}</p>`;
+                typingIndicator.id = ''; // Remove ID to prevent it from being selected again
+            }
+        }
+    </script>
+</body>
+</html>
